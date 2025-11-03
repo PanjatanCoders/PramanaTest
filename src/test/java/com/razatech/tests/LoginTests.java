@@ -1,26 +1,11 @@
 package com.razatech.tests;
 
+import com.razatech.base.BaseTest;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
-import java.time.Duration;
-
-public class LoginTests {
-
-    private WebDriver driver;
-
-    @BeforeMethod
-    public void setUp() {
-        ChromeOptions options = new ChromeOptions();
-//        options.addArguments("--headless");
-        driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-    }
+public class LoginTests extends BaseTest {
 
     @Test(priority = 1, description = "Test login with valid credentials")
     public void testLoginWithValidCredentials() {
@@ -53,12 +38,5 @@ public class LoginTests {
 
         boolean isErrorDisplayed = driver.findElement(By.id("loginAlert")).isDisplayed();
         Assert.assertTrue(isErrorDisplayed, "Invalid username and password! Please check your credentials.");
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        if (driver != null) {
-            driver.quit();
-        }
     }
 }
