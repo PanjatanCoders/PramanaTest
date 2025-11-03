@@ -17,8 +17,5 @@ public class SuiteListener implements ISuiteListener {
         System.out.println("========================================");
         System.out.println("Suite finished: " + suite.getName());
         System.out.println("========================================");
-
-        // Call API to mark suite as complete
-        ReportUtils.completeSuite();
     }
 }

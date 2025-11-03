@@ -13,14 +13,14 @@ public class HomePageTest extends BaseTest {
         Thread.sleep(2000);
     }
 
-    @Test
+    @Test(description = "Navigation Links Verification")
     public void verifyNavigationLinks() throws InterruptedException {
         HomePage home = new HomePage(driver);
         int count = home.getNavLinkCount();
         Assert.assertTrue(count >= 3, "Expected at least 3 navigation links but found: " + count);
     }
 
-    @Test
+    @Test(description = "Hero Section Verification")
     public void verifyHeroSectionAndCTA() {
         HomePage home = new HomePage(driver);
         Assert.assertTrue(home.isHeroVisible(), "Hero heading not visible!");
@@ -29,14 +29,14 @@ public class HomePageTest extends BaseTest {
                 "CTA button did not perform expected navigation.");
     }
 
-    @Test
+    @Test(description = "Verify Features are available")
     public void verifyFeaturesSection() {
         HomePage home = new HomePage(driver);
         int featureCount = home.getFeatureCount();
         Assert.assertTrue(featureCount >= 3, "Expected at least 3 features but found: " + featureCount);
     }
 
-    @Test
+    @Test(description = "Footer content links verification")
     public void verifyFooterContentAndLinks() {
         HomePage home = new HomePage(driver);
         Assert.assertTrue(home.isFooterVisible(), "Footer not visible!");

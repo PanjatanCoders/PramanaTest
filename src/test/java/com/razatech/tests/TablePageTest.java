@@ -18,20 +18,20 @@ public class TablePageTest extends BaseTest {
         Thread.sleep(2000);
     }
 
-    @Test
+    @Test(description = "Page title verification")
     public void verifyPageTitle() {
         TablePage table = new TablePage(driver);
         Assert.assertTrue(table.getTitle().contains("Container Shipment Data"), "Page title mismatch!");
     }
 
-    @Test
+    @Test(description = "Verify records per page")
     public void verifyRecordsPerPage() {
         TablePage table = new TablePage(driver);
         table.selectRecordsPerPage("20");
         Assert.assertTrue(table.getVisibleRowCount() <= 20, "Records per page validation failed!");
     }
 
-    @Test
+    @Test(description = "Verify Status Filter")
     public void verifyStatusFilter() {
         TablePage table = new TablePage(driver);
         table.filterByStatus("Delivered");
@@ -40,7 +40,7 @@ public class TablePageTest extends BaseTest {
         }
     }
 
-    @Test
+    @Test(description = "Verify download csv report")
     public void verifyDownloadCSV() throws InterruptedException {
         TablePage table = new TablePage(driver);
         table.clickDownloadCSV();
@@ -51,7 +51,7 @@ public class TablePageTest extends BaseTest {
         Assert.assertTrue(files != null && files.length > 0, "CSV file not downloaded!");
     }
 
-    @Test
+    @Test(description = "Verify Sorting with container id")
     public void verifySortingByContainerID() {
         TablePage table = new TablePage(driver);
         table.sortByContainerID();
