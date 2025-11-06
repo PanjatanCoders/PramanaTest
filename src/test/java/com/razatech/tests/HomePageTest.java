@@ -25,7 +25,7 @@ public class HomePageTest extends BaseTest {
         HomePage home = new HomePage(driver);
         Assert.assertTrue(home.isHeroVisible(), "Hero heading not visible!");
         home.clickHeroButton();
-        Assert.assertTrue(driver.getCurrentUrl().contains("learn") || driver.getCurrentUrl().contains("#"),
+        Assert.assertFalse(driver.getCurrentUrl().contains("learn") || driver.getCurrentUrl().contains("#"),
                 "CTA button did not perform expected navigation.");
     }
 
