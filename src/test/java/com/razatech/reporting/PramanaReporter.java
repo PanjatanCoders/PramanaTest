@@ -94,6 +94,10 @@ public class PramanaReporter {
         return currentSuiteId;
     }
 
+    public static String getCurrentTestId() {
+        return currentTestId;
+    }
+
     public static String logTestResult(String testCaseId, String testName,
                                         String status, long duration,
                                         String errorMessage, String stackTrace) {
@@ -144,6 +148,42 @@ public class PramanaReporter {
     public static void setCurrentTestId(String testId) {
         currentTestId = testId;
         currentStepNumber = 0;
+    }
+
+    public static void updateTestResult(String testId, String status, long duration,
+                                        String errorMessage, String stackTrace) {
+        if (testId == null) {
+            System.err.println("⚠️ No test ID provided for update.");
+            return;
+        }
+
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPut request = new HttpPut(
+                BASE_URL + "/api/v1/tests/" + testId
+            );
+            request.setHeader("Content-Type", "application/json");
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("status", status);
+            body.put("duration", duration);
+
+            if (errorMessage != null) {
+                body.put("errorMessage", errorMessage);
+            }
+            if (stackTrace != null) {
+                body.put("stackTrace", stackTrace);
+            }
+
+            request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
+
+            client.execute(request, r -> {
+                System.out.println("✅ Test updated: " + testId + " [" + status + "]");
+                return null;
+            });
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to update test: " + e.getMessage());
+        }
     }
 
     public static String logStep(String description, String status, long duration) {

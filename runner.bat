@@ -1,1 +1,1 @@
-java -jar "pramana-1.1.6.jar"
+java -jar "pramana-1.1.8.jar"

@@ -37,14 +37,15 @@ public class PramanaListener implements ITestListener, ISuiteListener {
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        logTest(result, "passed");
+        updateTest(result, "passed");
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
-        String testId = logTest(result, "failed");
+        updateTest(result, "failed");
 
         // Capture and attach screenshot on failure
+        String testId = PramanaReporter.getCurrentTestId();
         if (testId != null) {
             captureAndAttachScreenshot(result, testId);
         }
@@ -52,7 +53,7 @@ public class PramanaListener implements ITestListener, ISuiteListener {
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        logTest(result, "skipped");
+        updateTest(result, "skipped");
     }
 
     @Override
@@ -60,11 +61,12 @@ public class PramanaListener implements ITestListener, ISuiteListener {
         PramanaReporter.completeSuite();
     }
 
-    private String logTest(ITestResult result, String status) {
-        String testCaseId = result.getMethod().getMethodName();
-        String testName = result.getMethod().getDescription() != null
-            ? result.getMethod().getDescription()
-            : result.getMethod().getMethodName();
+    private void updateTest(ITestResult result, String status) {
+        String testId = PramanaReporter.getCurrentTestId();
+        if (testId == null) {
+            System.err.println("⚠️ No active test to update");
+            return;
+        }
 
         long duration = result.getEndMillis() - result.getStartMillis();
 
@@ -76,17 +78,25 @@ public class PramanaListener implements ITestListener, ISuiteListener {
             stackTrace = Arrays.toString(result.getThrowable().getStackTrace());
         }
 
-        return PramanaReporter.logTestResult(
-            testCaseId, testName, status, duration, errorMessage, stackTrace
-        );
+        PramanaReporter.updateTestResult(testId, status, duration, errorMessage, stackTrace);
     }
 
     private void captureAndAttachScreenshot(ITestResult result, String testId) {
         try {
             Object testInstance = result.getInstance();
-            WebDriver driver = (WebDriver) testInstance.getClass()
-                .getDeclaredField("driver")
-                .get(testInstance);
+
+            // Try to get driver field from test class
+            WebDriver driver = null;
+            try {
+                java.lang.reflect.Field driverField = testInstance.getClass().getSuperclass().getDeclaredField("driver");
+                driverField.setAccessible(true);
+                driver = (WebDriver) driverField.get(testInstance);
+            } catch (NoSuchFieldException e) {
+                // Try getting from the test class itself if not in superclass
+                java.lang.reflect.Field driverField = testInstance.getClass().getDeclaredField("driver");
+                driverField.setAccessible(true);
+                driver = (WebDriver) driverField.get(testInstance);
+            }
 
             if (driver != null) {
                 String base64Screenshot = ((TakesScreenshot) driver)
@@ -97,9 +107,12 @@ public class PramanaListener implements ITestListener, ISuiteListener {
 
                 PramanaReporter.attachScreenshot(testId, null, screenshotName,
                     base64Screenshot, description);
+
+                System.out.println("✅ Screenshot captured and attached: " + screenshotName);
             }
         } catch (Exception e) {
             System.err.println("⚠️ Failed to capture screenshot: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

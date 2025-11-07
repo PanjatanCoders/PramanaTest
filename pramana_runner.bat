@@ -1,2 +1,2 @@
 echo *********Starting Pramana Test Server*********
-java -jar pramana-1.0.0.jar
+java -jar pramana-1.1.8.jar
