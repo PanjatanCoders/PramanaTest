@@ -19,6 +19,8 @@ public class PramanaReporter {
     private static final String CONFIG_FILE = "config.properties";
     private static String BASE_URL;
     private static String currentSuiteId = null;
+    private static String currentTestId = null;
+    private static int currentStepNumber = 0;
     private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
@@ -92,12 +94,12 @@ public class PramanaReporter {
         return currentSuiteId;
     }
 
-    public static void logTestResult(String testCaseId, String testName,
-                                      String status, long duration,
-                                      String errorMessage, String stackTrace) {
+    public static String logTestResult(String testCaseId, String testName,
+                                        String status, long duration,
+                                        String errorMessage, String stackTrace) {
         if (currentSuiteId == null) {
             System.err.println("⚠️ No active suite. Call createSuite() first.");
-            return;
+            return null;
         }
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -122,14 +124,44 @@ public class PramanaReporter {
 
             request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
 
-            client.execute(request, r -> {
-                System.out.println("✅ Test logged: " + testName + " [" + status + "]");
-                return null;
+            String response = client.execute(request, r -> {
+                return new String(r.getEntity().getContent().readAllBytes());
             });
+
+            Map<String, Object> result = mapper.readValue(response, Map.class);
+            String testId = (String) result.get("id");
+            currentTestId = testId;
+            currentStepNumber = 0; // Reset step counter for new test
+            System.out.println("✅ Test logged: " + testName + " [" + status + "]");
+            return testId;
 
         } catch (Exception e) {
             System.err.println("❌ Failed to log test: " + e.getMessage());
+            return null;
         }
+    }
+
+    public static void setCurrentTestId(String testId) {
+        currentTestId = testId;
+        currentStepNumber = 0;
+    }
+
+    public static String logStep(String description, String status, long duration) {
+        if (currentTestId == null) {
+            System.err.println("⚠️ No active test. Cannot log step.");
+            return null;
+        }
+        currentStepNumber++;
+        return logTestStep(currentTestId, currentStepNumber, description, status, duration, null);
+    }
+
+    public static String logStep(String description, String status, long duration, String errorMessage) {
+        if (currentTestId == null) {
+            System.err.println("⚠️ No active test. Cannot log step.");
+            return null;
+        }
+        currentStepNumber++;
+        return logTestStep(currentTestId, currentStepNumber, description, status, duration, errorMessage);
     }
 
     public static void completeSuite() {
@@ -147,6 +179,71 @@ public class PramanaReporter {
 
         } catch (Exception e) {
             System.err.println("❌ Failed to complete suite: " + e.getMessage());
+        }
+    }
+
+    public static String logTestStep(String testId, int stepNumber, String description,
+                                      String status, long duration, String errorMessage) {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(BASE_URL + "/api/v1/steps");
+            request.setHeader("Content-Type", "application/json");
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("testId", testId);
+            body.put("stepNumber", stepNumber);
+            body.put("description", description);
+            body.put("status", status);
+            body.put("duration", duration);
+            if (errorMessage != null) {
+                body.put("errorMessage", errorMessage);
+            }
+
+            request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
+
+            String response = client.execute(request, r -> {
+                return new String(r.getEntity().getContent().readAllBytes());
+            });
+
+            Map<String, Object> result = mapper.readValue(response, Map.class);
+            String stepId = (String) result.get("id");
+            System.out.println("✅ Test step logged: " + description + " [" + status + "]");
+            return stepId;
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to log test step: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static void attachScreenshot(String testId, String stepId, String name,
+                                        String base64Content, String description) {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(
+                BASE_URL + "/api/v1/tests/" + testId + "/attachments"
+            );
+            request.setHeader("Content-Type", "application/json");
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("type", "screenshot");
+            body.put("name", name);
+            body.put("content", base64Content);
+            body.put("timestamp", java.time.Instant.now().toString());
+            if (stepId != null) {
+                body.put("stepId", stepId);
+            }
+            if (description != null) {
+                body.put("description", description);
+            }
+
+            request.setEntity(new StringEntity(mapper.writeValueAsString(body)));
+
+            client.execute(request, r -> {
+                System.out.println("✅ Screenshot attached: " + name);
+                return null;
+            });
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to attach screenshot: " + e.getMessage());
         }
     }
 }

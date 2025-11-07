@@ -1,5 +1,6 @@
 package com.razatech.base;
 
+import com.razatech.reporting.PramanaReporter;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -18,6 +19,7 @@ public class BaseTest {
         driver = new ChromeDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
         driver.manage().window().maximize();
+        PramanaReporter.logStep("Browser launched", "passed", System.currentTimeMillis());
     }
 
     @AfterMethod
